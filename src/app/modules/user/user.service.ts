@@ -1,7 +1,7 @@
+import { envVars } from "../../config/env";
 import { IAuthProvider, IUser } from "./user.interface";
 import { User } from "./user.model";
-
-
+import bcryptjs from "bcryptjs"
 
 
 const createUser = async (payload: Partial<IUser>) => {
@@ -9,11 +9,13 @@ const createUser = async (payload: Partial<IUser>) => {
 
     const isUserExist = await User.findOne({ email })
 
+     const hashedPassword = await bcryptjs.hash(password as string, Number(envVars.BCRYPT_SALT_ROUND))
+
     const authProvider: IAuthProvider = { provider: "credentials", providerId: email as string }
 
     const user = await User.create({
         email,
-        password,
+        password: hashedPassword,
         auths: [authProvider],
         ...rest
     })
@@ -21,6 +23,19 @@ const createUser = async (payload: Partial<IUser>) => {
 
 }
 
+const getAllUsers = async () => {
+    const users = await User.find({});
+    const totalUsers = await User.countDocuments()
+
+    return {
+        data: users,
+        meta: {
+            total: totalUsers
+        }
+    };
+}
+
 export const UserServices = {
-    createUser
+    createUser,
+    getAllUsers
 }
